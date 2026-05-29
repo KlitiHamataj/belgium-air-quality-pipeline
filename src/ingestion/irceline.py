@@ -80,6 +80,20 @@ def fetch_timeseries_data(
     return data.get("values", [])
 
 
+def fetch_timeseries_metadata(client: httpx.Client) -> list[dict]:
+    """
+    Fetch all available timeseries with expanded metadata.
+    Each timeseries = one station + one pollutant combination.
+    """
+    timeseries = _get(
+        client,
+        "timeseries",
+        params={"expanded": "true", "offset": 0, "limit": 5000},
+    )
+    logger.info(f"Fetched metadata for {len(timeseries)} timeseries")
+    return timeseries
+
+
 def ingest_irceline(
     lookback_hours: int = 24,
     output_dir: str | None = None,
@@ -109,7 +123,17 @@ def ingest_irceline(
     start = end - timedelta(hours=lookback_hours)
     ingested_at = datetime.utcnow()
 
-    target_phenomenon_ids = {POLLUTANT_IDS[p] for p in pollutants if p in POLLUTANT_IDS}
+    # Match by label text
+    label_map = {
+        "PM10": "Particulate Matter < 10",
+        "PM2.5": "Particulate Matter < 2.5",
+        "NO2": "Nitrogen dioxide",
+        "O3": "Ozone",
+        "SO2": "Sulphur dioxide",
+        "CO": "Carbon monoxide",
+        "BC": "Black Carbon",
+    }
+    target_labels = [label_map[p] for p in pollutants if p in label_map]
 
     rows = []
 
@@ -119,10 +143,11 @@ def ingest_irceline(
 
         # Filter to our target pollutants
         relevant = [
-            ts
-            for ts in all_timeseries
-            if ts.get("parameters", {}).get("phenomenon", {}).get("id")
-            in target_phenomenon_ids
+            ts for ts in all_timeseries
+            if any(
+                target in ts.get("parameters", {}).get("phenomenon", {}).get("label", "")
+                for target in target_labels
+            )
         ]
         logger.info(
             f"Found {len(relevant)} timeseries for pollutants: {pollutants}"
@@ -161,7 +186,6 @@ def ingest_irceline(
 
     if not rows:
         logger.warning("No IRCELINE data fetched — check API or date range")
-        # Write empty parquet with schema so downstream doesn't break
         table = pa.table({f.name: pa.array([], type=f.type) for f in IRCELINE_SCHEMA})
     else:
         table = pa.Table.from_pylist(rows, schema=IRCELINE_SCHEMA)
