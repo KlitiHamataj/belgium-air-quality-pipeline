@@ -1,0 +1,32 @@
+# Data
+data/
+*.parquet
+*.duckdb
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Environment
+.env
+
+# Airflow
+airflow/
+logs/
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
