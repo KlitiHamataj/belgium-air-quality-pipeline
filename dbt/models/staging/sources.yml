@@ -1,0 +1,49 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Raw Parquet files from ingestion layer"
+    meta:
+      owner: "Kliti Hamataj"
+
+    tables:
+      - name: irceline
+        description: "IRCELINE SOS API measurements — Belgium's official air quality network"
+        meta:
+          source_url: "https://geo.irceline.be/sos/api/v1/"
+          update_frequency: "hourly"
+        external:
+          location: "../data/raw/irceline/*.parquet"
+          file_format: "parquet"
+        columns:
+          - name: station_id
+            description: "Unique IRCELINE station identifier"
+            tests:
+              - not_null
+          - name: pollutant
+            description: "Measured pollutant (PM10, PM2.5, NO2, O3, etc.)"
+            tests:
+              - not_null
+          - name: value
+            description: "Measurement value in µg/m³"
+          - name: timestamp
+            description: "Measurement timestamp (UTC)"
+            tests:
+              - not_null
+
+
+      - name: weather
+        description: "Open-Meteo weather data for Belgian locations"
+        meta:
+          source_url: "https://open-meteo.com/"
+          update_frequency: "hourly"
+        external:
+          location: "../data/raw/weather/*.parquet"
+          file_format: "parquet"
+        columns:
+          - name: location_name
+            tests:
+              - not_null
+          - name: timestamp
+            tests:
+              - not_null
