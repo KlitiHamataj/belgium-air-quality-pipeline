@@ -18,9 +18,9 @@ cleaned as (
         longitude,
         -- Standardize pollutant names
         case
-            when lower(pollutant) like '%pm2%' or lower(pollutant) like '%pm25%'
+            when lower(pollutant) like '%particulate%2.5%' or lower(pollutant) like '%pm2%'
                 then 'PM2.5'
-            when lower(pollutant) like '%pm10%'
+            when lower(pollutant) like '%particulate%10%' or lower(pollutant) like '%pm10%'
                 then 'PM10'
             when lower(pollutant) like '%no2%' or lower(pollutant) like '%nitrogen dioxide%'
                 then 'NO2'
