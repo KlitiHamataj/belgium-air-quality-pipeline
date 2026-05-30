@@ -1,0 +1,15 @@
+belgium_air_quality:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "../data/warehouse/air_quality.duckdb"
+      threads: 4
+      extensions:
+        - spatial  # For ST_Distance, ST_Point etc.
+    prod:
+      type: duckdb
+      path: "../data/warehouse/air_quality.duckdb"
+      threads: 4
+      extensions:
+        - spatial

@@ -1,0 +1,36 @@
+name: "belgium_air_quality"
+version: "1.0.0"
+config-version: 2
+
+profile: "belgium_air_quality"
+
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+models:
+  belgium_air_quality:
+    staging:
+      +materialized: view
+      +schema: staging
+    intermediate:
+      +materialized: table
+      +schema: intermediate
+    marts:
+      +materialized: table
+      +schema: marts
+
+vars:
+  # BelAQI thresholds (µg/m³) — Belgium's official index
+  # Index: 1 (Very Good) → 10 (Horrible)
+  belaqi_pm25_thresholds: [0, 5, 10, 15, 25, 35, 45, 55, 65, 75]
+  belaqi_pm10_thresholds: [0, 10, 20, 30, 40, 50, 60, 70, 80, 100]
+  belaqi_no2_thresholds: [0, 10, 20, 30, 50, 70, 100, 150, 200, 400]
+  belaqi_o3_thresholds: [0, 20, 40, 60, 80, 100, 140, 180, 240, 380]
