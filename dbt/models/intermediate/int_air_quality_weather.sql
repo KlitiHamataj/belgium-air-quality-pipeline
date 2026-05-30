@@ -9,8 +9,6 @@
 with air_quality as (
     -- Union both sources into one stream
     select * from {{ ref('stg_irceline') }}
-    union all
-    select * from {{ ref('stg_openaq') }}
 ),
 
 weather as (
