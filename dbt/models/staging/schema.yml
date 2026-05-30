@@ -1,0 +1,69 @@
+version: 2
+
+models:
+  - name: stg_irceline
+    description: "Cleaned IRCELINE measurements"
+    columns:
+      - name: station_id
+        tests:
+          - not_null
+      - name: pollutant
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['PM2.5', 'PM10', 'NO2', 'O3', 'SO2', 'CO', 'BC']
+      - name: measurement_value
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 1000
+
+
+  - name: stg_weather
+    description: "Cleaned weather data"
+    columns:
+      - name: location_name
+        tests:
+          - not_null
+      - name: measured_at
+        tests:
+          - not_null
+
+  - name: int_air_quality_weather
+    description: "Air quality joined with nearest weather station"
+    columns:
+      - name: station_id
+        tests:
+          - not_null
+      - name: measured_at
+        tests:
+          - not_null
+
+  - name: mart_daily_aqi
+    description: "Daily BelAQI per station"
+    columns:
+      - name: station_id
+        tests:
+          - not_null
+      - name: measurement_date
+        tests:
+          - not_null
+      - name: belaqi_overall
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 10
+
+  - name: mart_station_summary
+    description: "Station-level aggregate statistics"
+    columns:
+      - name: station_id
+        tests:
+          - unique
+          - not_null
+      - name: days_with_data
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 1
