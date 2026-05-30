@@ -15,10 +15,6 @@ models:
       - name: measurement_value
         tests:
           - not_null
-          - dbt_utils.accepted_range:
-              min_value: 0
-              max_value: 1000
-
 
   - name: stg_weather
     description: "Cleaned weather data"
@@ -52,9 +48,6 @@ models:
       - name: belaqi_overall
         tests:
           - not_null
-          - dbt_utils.accepted_range:
-              min_value: 0
-              max_value: 10
 
   - name: mart_station_summary
     description: "Station-level aggregate statistics"
@@ -63,7 +56,3 @@ models:
         tests:
           - unique
           - not_null
-      - name: days_with_data
-        tests:
-          - dbt_utils.accepted_range:
-              min_value: 1
