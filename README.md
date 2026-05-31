@@ -1,8 +1,7 @@
 # 🇧🇪 Belgium Air Quality Pipeline
 
-End-to-end ELT pipeline ingesting real-time and historical air quality data from Belgian monitoring stations, transforming it with dbt, validating with Great Expectations, and serving it through a FastAPI endpoint and Streamlit geospatial dashboard.
+End-to-end ELT pipeline ingesting real-time air quality data from Belgium's official monitoring network, transforming it with dbt, validating with Great Expectations, and serving it through a FastAPI endpoint and Streamlit geospatial dashboard.
 
-Built as a portfolio project for learning Airflow, dbt and Great Expectations
 
 ## Screenshots
 
