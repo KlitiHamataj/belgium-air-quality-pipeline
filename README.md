@@ -4,6 +4,14 @@ End-to-end ELT pipeline ingesting real-time and historical air quality data from
 
 Built as a portfolio project for learning Airflow, dbt and Great Expectations
 
+## Screenshots
+
+![Dashboard Map](docs/dashboard-map.png)
+
+![Station Detail](docs/dashboard-charts.png)
+
+![Airflow DAG](docs/airflow-dag.png)
+
 ## Architecture
 
 ```
