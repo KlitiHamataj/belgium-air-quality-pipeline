@@ -13,6 +13,10 @@ End-to-end ELT pipeline ingesting real-time air quality data from Belgium's offi
 
 ![Airflow DAG](docs/airflow-dag.png)
 
+## dbt Lineage
+
+![dbt Lineage](docs/dbt-lineage.png)
+
 ## Architecture
 
 ```
