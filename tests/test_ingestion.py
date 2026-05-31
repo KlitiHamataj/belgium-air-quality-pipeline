@@ -1,6 +1,5 @@
 """Unit tests for ingestion modules."""
 
-import pytest
 
 
 def test_irceline_schema_fields():

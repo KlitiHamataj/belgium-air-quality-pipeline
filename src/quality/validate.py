@@ -2,17 +2,17 @@
 Great Expectations v1.x data quality checks on the DuckDB warehouse.
 """
 
-import sys
 import logging
+import sys
 from pathlib import Path
 
 import duckdb
 import great_expectations as gx
 from great_expectations.expectations import (
-    ExpectTableRowCountToBeBetween,
-    ExpectColumnValuesToNotBeNull,
-    ExpectColumnValuesToBeUnique,
     ExpectColumnValuesToBeBetween,
+    ExpectColumnValuesToBeUnique,
+    ExpectColumnValuesToNotBeNull,
+    ExpectTableRowCountToBeBetween,
 )
 
 logging.basicConfig(level=logging.INFO)

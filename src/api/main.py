@@ -8,12 +8,11 @@ Endpoints:
     GET /health                — Pipeline health check
 """
 
+import math
 from datetime import date
 from pathlib import Path
 
 import duckdb
-import math
-import json
 from fastapi import FastAPI, HTTPException, Query
 
 app = FastAPI(

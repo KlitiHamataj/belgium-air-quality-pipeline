@@ -9,7 +9,6 @@ Available pollutants: PM10, PM2.5, NO2, O3, SO2, CO, BC (black carbon)
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from tracemalloc import stop
 
 import httpx
 import pyarrow as pa

@@ -127,15 +127,20 @@ for _, row in filtered.iterrows():
 map_data = st_folium(m, width=None, height=500, returned_objects=["last_object_clicked"])
 
 # ─── BelAQI Legend ───────────────────────────────────────────────
-legend_html = """
-<div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem;">
-    <span style="background: #50C878; color: black; padding: 4px 10px; border-radius: 4px; font-size: 13px;">1-2 Very Good</span>
-    <span style="background: #FFD700; color: black; padding: 4px 10px; border-radius: 4px; font-size: 13px;">3-4 Good</span>
-    <span style="background: #FF8C00; color: black; padding: 4px 10px; border-radius: 4px; font-size: 13px;">5-6 Moderate</span>
-    <span style="background: #DC143C; color: white; padding: 4px 10px; border-radius: 4px; font-size: 13px;">7-8 Poor</span>
-    <span style="background: #8B0000; color: white; padding: 4px 10px; border-radius: 4px; font-size: 13px;">9-10 Very Poor</span>
-</div>
-"""
+legend_html = (
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem;">'
+    '<span style="background:#50C878;padding:4px 10px;border-radius:4px">'
+    "1-2 Very Good</span>"
+    '<span style="background:#FFD700;padding:4px 10px;border-radius:4px">'
+    "3-4 Good</span>"
+    '<span style="background:#FF8C00;padding:4px 10px;border-radius:4px">'
+    "5-6 Moderate</span>"
+    '<span style="background:#DC143C;color:white;padding:4px 10px;'
+    'border-radius:4px">7-8 Poor</span>'
+    '<span style="background:#8B0000;color:white;padding:4px 10px;'
+    'border-radius:4px">9-10 Very Poor</span>'
+    "</div>"
+)
 st.markdown(legend_html, unsafe_allow_html=True)
 
 # ─── Station Deep Dive ───────────────────────────────────────────
@@ -231,7 +236,11 @@ if selected_label:
                 st.plotly_chart(fig3, use_container_width=True)
 
         with col4:
-            if "avg_boundary_layer" in daily_df.columns and daily_df["avg_boundary_layer"].notna().any():
+            has_bl = (
+                "avg_boundary_layer" in daily_df.columns
+                and daily_df["avg_boundary_layer"].notna().any()
+            )
+            if has_bl:
                 fig4 = px.scatter(
                     daily_df.dropna(subset=["avg_boundary_layer", "avg_pm25"]),
                     x="avg_boundary_layer",
