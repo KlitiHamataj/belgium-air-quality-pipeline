@@ -1,0 +1,110 @@
+name: Daily refresh
+
+# Daily ELT run: ingest -> dbt run -> dbt test -> Great Expectations -> publish.
+# The refreshed warehouse is published as an asset on the rolling "data-latest"
+# GitHub Release, which the Streamlit app downloads. Nothing is committed to git.
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 06:00 UTC daily, same as the Airflow DAG
+  workflow_dispatch:
+    inputs:
+      lookback_hours:
+        description: "Hours of history to ingest (168 = 7-day backfill)"
+        required: false
+        default: "30"
+
+permissions:
+  contents: write # needed to create the release and upload assets
+
+concurrency:
+  group: daily-refresh
+  cancel-in-progress: false # never kill a run halfway through publishing
+
+env:
+  RELEASE_TAG: data-latest
+  # Scheduled runs have no inputs, so fall back to 30h (6h overlap absorbs cron delays;
+  # duplicates are removed by the dbt staging models).
+  LOOKBACK_HOURS: ${{ inputs.lookback_hours || '30' }}
+  GH_TOKEN: ${{ github.token }}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pipeline dependencies
+        run: |
+          pip install --upgrade pip
+          pip install httpx tenacity python-dotenv pyarrow \
+            duckdb==1.5.3 dbt-core==1.11.11 dbt-duckdb==1.10.1 great-expectations==1.17.2
+
+      - name: Restore raw data history
+        run: |
+          mkdir -p data/raw
+          if ! assets=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>err.txt); then
+            if grep -q "release not found" err.txt; then
+              echo "No $RELEASE_TAG release yet: starting with empty history"
+              exit 0
+            fi
+            cat err.txt
+            exit 1 # any other error: stop, rather than publish without history
+          fi
+          if grep -qx "raw-data.tar.gz" <<< "$assets"; then
+            gh release download "$RELEASE_TAG" --pattern raw-data.tar.gz --dir "$RUNNER_TEMP"
+            tar -xzf "$RUNNER_TEMP/raw-data.tar.gz" -C data/raw
+          else
+            echo "Release has no raw archive yet: starting with empty history"
+          fi
+          echo "Raw files restored: $(find data/raw -name '*.parquet' | wc -l)"
+
+      - name: Ingest IRCELINE and Open-Meteo
+        run: python -m src.ingestion.run_all "$LOOKBACK_HOURS"
+
+      - name: dbt run
+        working-directory: dbt
+        run: |
+          rm -f ../data/warehouse/air_quality.duckdb # build from scratch, not on the committed snapshot
+          dbt run --profiles-dir .
+
+      - name: dbt test
+        working-directory: dbt
+        run: dbt test --profiles-dir .
+
+      - name: Great Expectations validation
+        run: python -m src.quality.validate
+
+      - name: Summarize refreshed data
+        run: |
+          python - <<'EOF' >> "$GITHUB_STEP_SUMMARY"
+          import duckdb
+          con = duckdb.connect("data/warehouse/air_quality.duckdb", read_only=True)
+          first, last, days, stations = con.execute(
+              "select min(measurement_date), max(measurement_date),"
+              " count(distinct measurement_date), count(distinct station_id)"
+              " from main_marts.mart_daily_aqi"
+          ).fetchone()
+          print(f"### Data refreshed\n\n{first} to {last}: {days} days, {stations} stations")
+          EOF
+
+      # Only reached if every step above succeeded, so a failed check leaves the
+      # previous good data in place.
+      - name: Publish to data-latest release
+        run: |
+          if ! gh release view "$RELEASE_TAG" > /dev/null 2>&1; then
+            gh release create "$RELEASE_TAG" --prerelease --title "Latest pipeline data" \
+              --notes "Rolling data snapshot, replaced daily by the Daily refresh workflow."
+          fi
+          tar -czf raw-data.tar.gz -C data/raw .
+          # Raw history first: if the warehouse upload then fails, tomorrow's run still has it.
+          gh release upload "$RELEASE_TAG" raw-data.tar.gz --clobber
+          gh release upload "$RELEASE_TAG" data/warehouse/air_quality.duckdb --clobber

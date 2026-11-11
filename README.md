@@ -36,7 +36,8 @@ marts
 - **Validates** data quality using dbt tests and Great Expectations (null checks, range validation, coordinate bounds, uniqueness)
 - **Serves** results through a FastAPI REST API with geospatial queries (find stations within N km of any coordinate)
 - **Visualizes** everything in a Streamlit dashboard with an interactive Folium map, Plotly time series, and weather correlation charts
-- **Orchestrates** the full pipeline daily via an Airflow DAG running in Docker
+- **Refreshes** the live dashboard daily with a scheduled GitHub Actions workflow (ingest → dbt run → dbt test → Great Expectations → publish). The refreshed warehouse is only published when every check passes
+- **Orchestrates** the same pipeline locally with an Airflow DAG in Docker Compose (the local equivalent of the GitHub Actions refresh)
 
 ## Tech Stack
 
@@ -47,11 +48,11 @@ marts
 | Transform | dbt (dbt-duckdb) | Staging → intermediate → mart models |
 | Warehouse | DuckDB | Analytical queries |
 | Data Quality | dbt tests, Great Expectations | Validation gates |
-| Orchestration | Apache Airflow | Daily scheduling |
+| Orchestration | GitHub Actions (production), Apache Airflow in Docker Compose (local) | Daily refresh of the live dashboard; Airflow DAG is the local equivalent |
 | API | FastAPI | REST endpoints with geo queries |
 | Dashboard | Streamlit, Folium, Plotly | Interactive visualization |
 | Infrastructure | Docker Compose | Full stack in one command |
-| CI/CD | GitHub Actions | Lint + test on every push |
+| CI/CD | GitHub Actions | Lint + test on every push; daily data refresh published as a release asset |
 
 ## Quick Start
 
@@ -139,7 +140,9 @@ belgium-air-quality-pipeline/
 ├── docker/
 │   ├── Dockerfile
 │   └── Dockerfile.airflow
-├── .github/workflows/ci.yml       # GitHub Actions
+├── .github/workflows/
+│   ├── ci.yml                     # Lint + test on every push
+│   └── daily-refresh.yml          # Scheduled daily pipeline run + publish
 ├── docker-compose.yml
 └── requirements.txt
 ```
@@ -151,4 +154,4 @@ belgium-air-quality-pipeline/
 
 ## License
 
-MIT
+MIT

@@ -190,7 +190,7 @@ def ingest_irceline(
         table = pa.Table.from_pylist(rows, schema=IRCELINE_SCHEMA)
 
     # Partition by date for efficient reads
-    date_str = end.strftime("%Y-%m-%d")
+    date_str = end.strftime("%Y-%m-%d_%H%M%S")  # time suffix: same-day re-runs never overwrite
     file_path = output_path / f"irceline_{date_str}.parquet"
     pq.write_table(table, file_path)
 

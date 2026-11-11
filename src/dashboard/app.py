@@ -8,6 +8,11 @@ Features:
 """
 
 import math
+import os
+import tempfile
+import time
+import urllib.request
+from pathlib import Path
 
 import duckdb
 import folium
@@ -22,7 +27,15 @@ st.set_page_config(
     layout="wide",
 )
 
-DB_PATH = "./data/warehouse/air_quality.duckdb"
+# The daily GitHub Actions workflow publishes the warehouse to this release asset.
+WAREHOUSE_URL = os.getenv(
+    "WAREHOUSE_URL",
+    "https://github.com/KlitiHamataj/belgium-air-quality-pipeline"
+    "/releases/download/data-latest/air_quality.duckdb",
+)
+# Bundled snapshot, used only if the download fails.
+FALLBACK_DB_PATH = "./data/warehouse/air_quality.duckdb"
+DOWNLOAD_DIR = Path(tempfile.gettempdir()) / "air_quality_warehouse"
 
 BELAQI_COLORS = {
     1: "#50C878",
@@ -38,9 +51,28 @@ BELAQI_COLORS = {
 }
 
 
-@st.cache_resource
+def download_warehouse() -> str | None:
+    """Download the latest published warehouse. Returns its local path, or None on failure."""
+    DOWNLOAD_DIR.mkdir(exist_ok=True)
+    target = DOWNLOAD_DIR / f"air_quality_{int(time.time())}.duckdb"
+    try:
+        urllib.request.urlretrieve(WAREHOUSE_URL, target)
+    except Exception:
+        target.unlink(missing_ok=True)
+        return None
+    # Drop older copies (an open connection keeps its file readable on Linux).
+    for old in DOWNLOAD_DIR.glob("air_quality_*.duckdb"):
+        if old != target:
+            old.unlink(missing_ok=True)
+    return str(target)
+
+
+@st.cache_resource(ttl=3600)  # re-download at most once an hour
 def get_connection():
-    return duckdb.connect(DB_PATH, read_only=True)
+    path = download_warehouse()
+    if path is None:
+        return duckdb.connect(FALLBACK_DB_PATH, read_only=True), False
+    return duckdb.connect(path, read_only=True), True
 
 
 def clean_df(df):
@@ -53,15 +85,21 @@ def clean_df(df):
 
 
 @st.cache_data(ttl=300)
+def load_latest_date():
+    con, _ = get_connection()
+    return con.execute("select max(measurement_date) from main_marts.mart_daily_aqi").fetchone()[0]
+
+
+@st.cache_data(ttl=300)
 def load_station_summary():
-    con = get_connection()
+    con, _ = get_connection()
     df = con.execute("select * from main_marts.mart_station_summary").fetchdf()
     return clean_df(df)
 
 
 @st.cache_data(ttl=300)
 def load_daily_data(station_id=None):
-    con = get_connection()
+    con, _ = get_connection()
     query = "select * from main_marts.mart_daily_aqi"
     if station_id:
         query += f" where station_id = '{station_id}'"
@@ -72,7 +110,13 @@ def load_daily_data(station_id=None):
 
 # ─── Header ──────────────────────────────────────────────────────
 st.title("🇧🇪 Belgium Air Quality Monitor")
-st.markdown("Real-time pipeline: IRCELINE → dbt → DuckDB → this dashboard")
+st.markdown("Daily pipeline: IRCELINE → dbt → DuckDB → this dashboard")
+
+latest_date = load_latest_date()
+if latest_date:
+    st.caption(f"Data up to: {latest_date:%d %B %Y}")
+if not get_connection()[1]:
+    st.caption("Live data unavailable, showing the bundled snapshot.")
 
 # ─── Load data ───────────────────────────────────────────────────
 stations_df = load_station_summary()
@@ -99,7 +143,7 @@ st.sidebar.metric("Stations shown", len(filtered))
 # ─── Map ─────────────────────────────────────────────────────────
 st.subheader("Station Map")
 
-m = folium.Map(location=[50.5, 4.5], zoom_start=8, tiles="CartoDB positron")
+m = folium.Map(location=[50.5, 4.5], zoom_start=8, tiles="OpenStreetMap")
 
 for _, row in filtered.iterrows():
     belaqi = int(row.get("mean_belaqi") or 1)

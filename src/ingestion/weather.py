@@ -154,7 +154,7 @@ def ingest_weather(
     else:
         table = pa.Table.from_pylist(rows, schema=WEATHER_SCHEMA)
 
-    date_str = end.strftime("%Y-%m-%d")
+    date_str = end.strftime("%Y-%m-%d_%H%M%S")  # time suffix: same-day re-runs never overwrite
     file_path = output_path / f"weather_{date_str}.parquet"
     pq.write_table(table, file_path)
 
