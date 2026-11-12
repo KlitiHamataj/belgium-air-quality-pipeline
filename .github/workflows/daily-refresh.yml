@@ -6,7 +6,7 @@ name: Daily refresh
 
 on:
   schedule:
-    - cron: "0 6 * * *" # 06:00 UTC daily, same as the Airflow DAG
+    - cron: "17 6 * * *" # 06:17 UTC daily; off the top of the hour, when GitHub drops scheduled runs under load
   workflow_dispatch:
     inputs:
       lookback_hours:

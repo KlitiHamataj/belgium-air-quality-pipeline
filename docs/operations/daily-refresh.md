@@ -2,7 +2,7 @@
 title: Daily refresh and data publishing
 type: operation
 created: 2026-11-11
-updated: 2026-11-11
+updated: 2026-11-12
 sources:
   - code: .github/workflows/daily-refresh.yml
   - code: src/dashboard/app.py
@@ -10,7 +10,7 @@ sources:
   - code: src/ingestion/weather.py
   - code: dbt/models/staging/stg_irceline.sql
   - code: requirements.txt
-verified_at: 9b87f25
+verified_at: ff61ab4
 ---
 
 # Daily refresh and data publishing
@@ -21,7 +21,7 @@ steps locally.
 
 ## Flow
 
-The workflow runs daily at 06:00 UTC (`.github/workflows/daily-refresh.yml:9`), with a
+The workflow runs daily at 06:17 UTC (`.github/workflows/daily-refresh.yml:9`), with a
 manual "Run workflow" button that takes a `lookback_hours` input (default 30, use 168
 for a 7-day backfill). One job, steps in order:
 
@@ -70,6 +70,11 @@ place and has a stable URL.
 > ⚠️ Upload order matters: raw archive first, warehouse second
 > (`.github/workflows/daily-refresh.yml:109`). If the second upload fails, the next run
 > still has complete history.
+
+> ⚠️ Keep the cron off minute 0. GitHub delays or drops scheduled runs at the top of the
+> hour under load; the original `0 6 * * *` never fired on its first day. A schedule is
+> registered by a push that changes the workflow file, so after a force-push of that
+> commit, push a fresh change to the file if scheduled runs stop appearing.
 
 > ⚠️ GitHub disables scheduled workflows in a public repo after 60 days without commits.
 > It emails first; re-enable from the Actions tab.
