@@ -10,7 +10,7 @@ sources:
   - code: dags/air_quality_dag.py
   - code: tests/test_snapshot.py
   - ext:  https://github.com/motherduckdb/metabase_duckdb_driver
-verified_at: ded66f9
+verified_at: fe00500
 ---
 
 # Metabase (local BI)
