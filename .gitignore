@@ -2,6 +2,9 @@
 data/raw/
 *.parquet
 
+# Metabase snapshot (rebuilt by src/bi/snapshot.py)
+data/warehouse/metabase/
+
 # Keep the warehouse for Streamlit Cloud deployment
 !data/warehouse/air_quality.duckdb
 

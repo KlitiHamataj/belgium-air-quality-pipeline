@@ -51,6 +51,7 @@ marts
 | Orchestration | GitHub Actions (production), Apache Airflow in Docker Compose (local) | Daily refresh of the live dashboard; Airflow DAG is the local equivalent |
 | API | FastAPI | REST endpoints with geo queries |
 | Dashboard | Streamlit, Folium, Plotly | Interactive visualization |
+| BI (optional, local) | Metabase + DuckDB driver | Self-service questions and dashboards on the marts |
 | Infrastructure | Docker Compose | Full stack in one command |
 | CI/CD | GitHub Actions | Lint + test on every push; daily data refresh published as a release asset |
 
@@ -80,6 +81,29 @@ docker compose up --build
 # API at :8000
 # Dashboard at :8501
 ```
+
+## Metabase (optional, local)
+
+A local Metabase instance for ad-hoc questions and dashboards on the dbt marts.
+
+```bash
+python -m src.bi.snapshot                        # snapshot the warehouse for Metabase
+docker compose --profile metabase up --build metabase
+# Metabase at :3000
+```
+
+On first start, create an admin account, then **Add a database**:
+
+| Field | Value |
+|-------|-------|
+| Database type | DuckDB |
+| Display name | Belgium Air Quality |
+| Database file | `/warehouse/air_quality.duckdb` |
+| Establish a read-only connection | **on** |
+
+The tables appear under `main_marts` (`mart_daily_aqi`, `mart_station_summary`) and `main_intermediate`.
+
+Metabase reads a **snapshot**, not the live warehouse: DuckDB file locks would otherwise make the next `dbt run` fail while Metabase is open. The Airflow DAG republishes the snapshot as its last step, after every check passes. When you run the pipeline by hand, rerun `python -m src.bi.snapshot`. The first image build downloads about 700 MB.
 
 ## API Endpoints
 
@@ -127,6 +151,8 @@ belgium-air-quality-pipeline/
 │   │   └── main.py
 │   ├── dashboard/                 # Streamlit
 │   │   └── app.py
+│   ├── bi/                        # Metabase
+│   │   └── snapshot.py            # Read-only warehouse copy
 │   └── quality/                   # Great Expectations
 │       └── validate.py
 ├── dbt/
@@ -139,7 +165,8 @@ belgium-air-quality-pipeline/
 ├── tests/                         # pytest unit tests
 ├── docker/
 │   ├── Dockerfile
-│   └── Dockerfile.airflow
+│   ├── Dockerfile.airflow
+│   └── Dockerfile.metabase
 ├── .github/workflows/
 │   ├── ci.yml                     # Lint + test on every push
 │   └── daily-refresh.yml          # Scheduled daily pipeline run + publish

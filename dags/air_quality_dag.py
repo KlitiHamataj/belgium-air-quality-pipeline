@@ -5,6 +5,8 @@ Runs daily at 06:00 UTC:
 1. Ingest from IRCELINE and Open-Meteo (parallel)
 2. Run dbt models
 3. Run dbt tests
+4. Great Expectations checks
+5. Publish the read-only snapshot Metabase reads (only after every check passed)
 """
 
 from datetime import datetime, timedelta
@@ -59,4 +61,15 @@ with DAG(
         bash_command=f"cd {PROJECT_DIR} && python -m src.quality.validate",
     )
 
-    [ingest_irceline, ingest_weather] >> dbt_run >> dbt_test >> data_quality
+    publish_metabase_snapshot = BashOperator(
+        task_id="publish_metabase_snapshot",
+        bash_command=f"cd {PROJECT_DIR} && python -m src.bi.snapshot",
+    )
+
+    (
+        [ingest_irceline, ingest_weather]
+        >> dbt_run
+        >> dbt_test
+        >> data_quality
+        >> publish_metabase_snapshot
+    )

@@ -126,6 +126,7 @@ change this definition, fix the pathspec in
 | What changed | Page to update |
 |---|---|
 | `.github/workflows/daily-refresh.yml`, dashboard data loading, raw file naming, DuckDB version | [[daily-refresh]] |
+| `docker/Dockerfile.metabase`, the `metabase` compose service, `src/bi/`, the DAG's last task, DuckDB version | [[metabase]] |
 
 **Rhythm**: run `/docs-sync` right after a deploy or a release -- the moments when
 changes pile up. Do not wait to be asked.

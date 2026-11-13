@@ -31,6 +31,7 @@ This wiki grows as work touches new areas. So far:
 ## operations
 
 - [[daily-refresh]] -- scheduled GitHub Actions run, release-asset publishing, dashboard download
+- [[metabase]] -- optional local Metabase on a read-only warehouse snapshot, and why it never reads the live file
 
 ## history
 

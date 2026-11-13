@@ -14,3 +14,10 @@ Append-only. Newest entries at the bottom.
 - Started in grow mode. First page: `operations/daily-refresh.md`, written from
   `.github/workflows/daily-refresh.yml`, `src/dashboard/app.py` and the ingestion
   filename change made in the same session. No other areas documented yet.
+
+## [2026-11-13] grow | Metabase page
+
+- Added `operations/metabase.md` for the new optional local Metabase (compose profile
+  `metabase`, `docker/Dockerfile.metabase`, `src/bi/snapshot.py`, DAG task
+  `publish_metabase_snapshot`)
+- Linked from `index.md`; added a row to the "When you change code" table in `CLAUDE.md`
